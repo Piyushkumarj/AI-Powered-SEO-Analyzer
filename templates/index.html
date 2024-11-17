@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Analyzer</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container my-5">
+        <h1 class="text-center mb-4">SEO Analyzer</h1>
+        <div class="card p-4 shadow-sm">
+            <form id="seo-form">
+                <div class="mb-3">
+                    <label for="url" class="form-label">Enter Website URL:</label>
+                    <input type="url" id="url" name="url" class="form-control" placeholder="https://example.com" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Analyze</button>
+            </form>
+        </div>
+        <div class="results mt-4" id="results"></div>
+    </div>
+
+    <!-- Bootstrap JS Bundle (with Popper.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.getElementById('seo-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const url = document.getElementById('url').value;
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="alert alert-info">Analyzing...</div>';
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `url=${encodeURIComponent(url)}`
+                });
+
+                if (!response.ok) throw new Error(await response.text());
+
+                const data = await response.json();
+                resultsDiv.innerHTML = `
+                    <div class="card shadow-sm p-4">
+                        <h2 class="mb-3">Analysis Results</h2>
+                        <h4>Metadata:</h4>
+                        <p><strong>Title:</strong> ${data.metadata.title || 'N/A'}</p>
+                        <p><strong>Meta Description:</strong> ${data.metadata.meta_description || 'N/A'}</p>
+
+                        <h4 class="mt-4">Top Keywords:</h4>
+                        <ul class="list-group">
+                            ${data.top_keywords.map(k => `<li class="list-group-item">${k[0]}: <span class="badge bg-primary">${k[1].toFixed(4)}</span></li>`).join('')}
+                        </ul>
+
+                        <h4 class="mt-4">Content Stats:</h4>
+                        <p><strong>Word Count:</strong> ${data.content_stats.word_count}</p>
+                        <p><strong>Average Sentence Length:</strong> ${data.content_stats.avg_sentence_length.toFixed(1)} words</p>
+
+                        <h4 class="mt-4">Recommendations:</h4>
+                        <ul class="list-group">
+                            ${data.recommendations.map(r => `<li class="list-group-item">${r}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>
